@@ -4,31 +4,112 @@ on:
   schedule:
     - cron: "17 3 * * 1"
   workflow_dispatch:
+    inputs:
+      force_release:
+        description: Create a new packaging revision even when the sources are unchanged
+        required: false
+        default: false
+        type: boolean
 
 permissions:
+  actions: write
   contents: write
-  pull-requests: write
+
+concurrency:
+  group: update
+  cancel-in-progress: false
 
 jobs:
   update:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.repository.default_branch }}
       - uses: cachix/install-nix-action@v31
 
       - name: Update sources
         run: nix run .#update
 
-      - name: Read version
-        id: version
-        run: echo "version=$(jq --raw-output .version sources.json)" >>"$GITHUB_OUTPUT"
+      - name: Determine release
+        id: release
+        env:
+          FORCE_RELEASE: ${{ inputs.force_release }}
+        run: |
+          version="$(jq --raw-output .version sources.json)"
+          force_release="${FORCE_RELEASE:-false}"
 
-      - name: Open update pull request
-        uses: peter-evans/create-pull-request@v8
-        with:
-          branch: automation/update-ab-download-manager
-          delete-branch: true
-          commit-message: "package: update to ${{ steps.version.outputs.version }}"
-          title: "package: update to ${{ steps.version.outputs.version }}"
-          body: |
-            Automated update from the latest official AB Download Manager release.
+          if git diff --quiet -- sources.json; then
+            changed=false
+          else
+            changed=true
+          fi
+
+          if [[ -n "$(git tag --list "v${version}-*")" ]]; then
+            has_release=true
+          else
+            has_release=false
+          fi
+
+          if [[ "$changed" == true || "$has_release" == false || "$force_release" == true ]]; then
+            should_release=true
+          else
+            should_release=false
+          fi
+
+          {
+            echo "version=$version"
+            echo "changed=$changed"
+            echo "should_release=$should_release"
+          } >>"$GITHUB_OUTPUT"
+
+      - name: Commit updated sources
+        if: steps.release.outputs.changed == 'true'
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add sources.json
+          git commit --message "package: update to $VERSION"
+          git push origin "HEAD:${{ github.event.repository.default_branch }}"
+
+      - name: Calculate release tag
+        if: steps.release.outputs.should_release == 'true'
+        id: tag
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          maximum_revision=0
+
+          while IFS= read -r existing_tag; do
+            revision="${existing_tag##*-}"
+            if [[ "$revision" =~ ^[0-9]+$ ]] && (( revision > maximum_revision )); then
+              maximum_revision="$revision"
+            fi
+          done < <(git tag --list "v${VERSION}-*")
+
+          tag="v${VERSION}-$((maximum_revision + 1))"
+          {
+            echo "tag=$tag"
+            echo "target=$(git rev-parse HEAD)"
+          } >>"$GITHUB_OUTPUT"
+
+      - name: Dispatch release validation
+        if: steps.release.outputs.should_release == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.tag.outputs.tag }}
+          TARGET: ${{ steps.tag.outputs.target }}
+        run: |
+          gh workflow run release.yml \
+            --ref "${{ github.event.repository.default_branch }}" \
+            --field "tag=$TAG" \
+            --field "target=$TARGET"
+
+      - name: Report no update
+        if: steps.release.outputs.should_release != 'true'
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+        run: echo "AB Download Manager v$VERSION is already released." >>"$GITHUB_STEP_SUMMARY"

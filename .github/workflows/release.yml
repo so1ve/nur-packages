@@ -4,9 +4,23 @@ on:
   push:
     tags:
       - "v*-*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to create
+        required: true
+        type: string
+      target:
+        description: Commit to validate and release
+        required: true
+        type: string
 
 permissions:
   contents: write
+
+concurrency:
+  group: release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
 
 jobs:
   validate:
@@ -22,6 +36,8 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.target || github.ref }}
       - uses: cachix/install-nix-action@v31
       - run: nix flake check --print-build-logs
 
@@ -30,7 +46,28 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.target || github.ref }}
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" --verify-tag --generate-notes --title "$GITHUB_REF_NAME"
+          TAG: ${{ inputs.tag || github.ref_name }}
+          TARGET: ${{ inputs.target || github.sha }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "$TAG is already released." >>"$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" \
+              --verify-tag \
+              --generate-notes \
+              --title "$TAG"
+          else
+            gh release create "$TAG" \
+              --target "$TARGET" \
+              --generate-notes \
+              --title "$TAG"
+          fi
