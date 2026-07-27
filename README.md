@@ -91,9 +91,9 @@ nix run .#update
 nix run .#update -- 1.10.2
 ```
 
-The update command reads the official GitHub Release API and updates the hashes for both Linux architectures. A weekly GitHub Actions workflow runs the same command, commits a new upstream version, and dispatches the release workflow automatically.
+The update command reads the official GitHub Release API and updates the hashes for both Linux architectures. GitHub Actions automatically tracks and publishes upstream updates.
 
-The release workflow validates the exact commit on both architectures before creating an immutable tag and GitHub Release. Tags are named `v<upstream-version>-<packaging-revision>`, for example `v1.10.2-1`. Manually running the update workflow can optionally force a new packaging revision when the upstream sources are unchanged. The wrapper does not re-upload upstream archives.
+Release tags follow `v<upstream-version>-<packaging-revision>`, for example `v1.10.2-1`. The wrapper does not re-upload upstream archives.
 
 ## Development
 

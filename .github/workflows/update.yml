@@ -12,7 +12,6 @@ on:
         type: boolean
 
 permissions:
-  actions: write
   contents: write
 
 concurrency:
@@ -20,8 +19,13 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  update:
+  prepare:
     runs-on: ubuntu-24.04
+    outputs:
+      base: ${{ steps.release.outputs.base }}
+      changed: ${{ steps.release.outputs.changed }}
+      should_release: ${{ steps.release.outputs.should_release }}
+      version: ${{ steps.release.outputs.version }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -36,6 +40,7 @@ jobs:
         id: release
         env:
           FORCE_RELEASE: ${{ inputs.force_release }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           version="$(jq --raw-output .version sources.json)"
           force_release="${FORCE_RELEASE:-false}"
@@ -46,11 +51,13 @@ jobs:
             changed=true
           fi
 
-          if [[ -n "$(git tag --list "v${version}-*")" ]]; then
-            has_release=true
-          else
-            has_release=false
-          fi
+          has_release=false
+          while IFS= read -r existing_tag; do
+            if gh release view "$existing_tag" >/dev/null 2>&1; then
+              has_release=true
+              break
+            fi
+          done < <(git tag --list "v${version}-*")
 
           if [[ "$changed" == true || "$has_release" == false || "$force_release" == true ]]; then
             should_release=true
@@ -59,28 +66,83 @@ jobs:
           fi
 
           {
+            echo "base=$(git rev-parse HEAD)"
             echo "version=$version"
             echo "changed=$changed"
             echo "should_release=$should_release"
           } >>"$GITHUB_OUTPUT"
 
-      - name: Commit updated sources
-        if: steps.release.outputs.changed == 'true'
+      - name: Save updated sources
+        if: steps.release.outputs.should_release == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: updated-sources
+          path: sources.json
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Report no update
+        if: steps.release.outputs.should_release != 'true'
         env:
           VERSION: ${{ steps.release.outputs.version }}
+        run: echo "AB Download Manager v$VERSION is already released." >>"$GITHUB_STEP_SUMMARY"
+
+  validate:
+    if: needs.prepare.outputs.should_release == 'true'
+    needs: prepare
+    name: Validate ${{ matrix.system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - system: x86_64-linux
+            runner: ubuntu-24.04
+          - system: aarch64-linux
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.prepare.outputs.base }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: updated-sources
+      - uses: cachix/install-nix-action@v31
+      - run: nix flake check --print-build-logs
+
+  publish:
+    if: ${{ always() && needs.prepare.outputs.should_release == 'true' && needs.validate.result == 'success' }}
+    needs:
+      - prepare
+      - validate
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.prepare.outputs.base }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: updated-sources
+
+      - name: Commit updated sources
+        if: needs.prepare.outputs.changed == 'true'
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          VERSION: ${{ needs.prepare.outputs.version }}
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add sources.json
           git commit --message "package: update to $VERSION"
-          git push origin "HEAD:${{ github.event.repository.default_branch }}"
+          git push origin "HEAD:$DEFAULT_BRANCH"
 
-      - name: Calculate release tag
-        if: steps.release.outputs.should_release == 'true'
-        id: tag
+      - name: Create tag and GitHub Release
         env:
-          VERSION: ${{ steps.release.outputs.version }}
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.prepare.outputs.version }}
         run: |
+          git fetch --force --tags origin
           maximum_revision=0
 
           while IFS= read -r existing_tag; do
@@ -91,25 +153,11 @@ jobs:
           done < <(git tag --list "v${VERSION}-*")
 
           tag="v${VERSION}-$((maximum_revision + 1))"
-          {
-            echo "tag=$tag"
-            echo "target=$(git rev-parse HEAD)"
-          } >>"$GITHUB_OUTPUT"
+          target="$(git rev-parse HEAD)"
 
-      - name: Dispatch release validation
-        if: steps.release.outputs.should_release == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ steps.tag.outputs.tag }}
-          TARGET: ${{ steps.tag.outputs.target }}
-        run: |
-          gh workflow run release.yml \
-            --ref "${{ github.event.repository.default_branch }}" \
-            --field "tag=$TAG" \
-            --field "target=$TARGET"
+          gh release create "$tag" \
+            --target "$target" \
+            --generate-notes \
+            --title "$tag"
 
-      - name: Report no update
-        if: steps.release.outputs.should_release != 'true'
-        env:
-          VERSION: ${{ steps.release.outputs.version }}
-        run: echo "AB Download Manager v$VERSION is already released." >>"$GITHUB_STEP_SUMMARY"
+          echo "Released $tag from $target." >>"$GITHUB_STEP_SUMMARY"
