@@ -1,5 +1,5 @@
 {
-  description = "AB Download Manager packaged for Nix";
+  description = "Ray's personal NUR repository";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
@@ -14,11 +14,16 @@
         "aarch64-linux"
       ];
       forAllSystems = nixpkgs.lib.genAttrs systems;
-      mkPkgs =
+      pkgsFor =
         system:
         import nixpkgs {
           inherit system;
           overlays = [ self.overlays.default ];
+        };
+      repositoryFor =
+        system:
+        import ./default.nix {
+          pkgs = pkgsFor system;
         };
       mkUpdate =
         pkgs:
@@ -30,46 +35,33 @@
             jq
             nix
           ];
-          text = builtins.readFile ./scripts/update.sh;
+          text = builtins.readFile ./pkgs/ab-download-manager/update.sh;
         };
     in
     {
-      overlays.default = final: _: {
-        ab-download-manager = final.callPackage ./package.nix { };
-      };
+      overlays = import ./overlays;
+      homeModules = import ./home-modules;
+
+      legacyPackages = forAllSystems repositoryFor;
 
       packages = forAllSystems (
-        system:
-        let
-          pkgs = mkPkgs system;
-          package = pkgs.ab-download-manager;
-        in
-        {
-          default = package;
-          ab-download-manager = package;
-        }
+        system: nixpkgs.lib.filterAttrs (_: nixpkgs.lib.isDerivation) (repositoryFor system)
       );
 
       apps = forAllSystems (
         system:
         let
-          pkgs = mkPkgs system;
+          pkgs = pkgsFor system;
           package = self.packages.${system}.ab-download-manager;
           update = mkUpdate pkgs;
         in
         {
-          default = {
-            type = "app";
-            program = "${package}/bin/ABDownloadManager";
-            meta.description = "Run AB Download Manager";
-          };
-          ab-download-manager = self.apps.${system}.default;
-          cli = {
+          ab-download-manager-cli = {
             type = "app";
             program = "${package}/bin/ABDownloadManagerCli";
             meta.description = "Run the AB Download Manager command-line client";
           };
-          update = {
+          update-ab-download-manager = {
             type = "app";
             program = "${update}/bin/update-ab-download-manager";
             meta.description = "Update AB Download Manager source metadata";
@@ -80,13 +72,13 @@
       checks = forAllSystems (
         system:
         let
-          pkgs = mkPkgs system;
+          pkgs = pkgsFor system;
           package = self.packages.${system}.ab-download-manager;
         in
         {
-          inherit package;
+          ab-download-manager = package;
 
-          package-layout = pkgs.runCommand "ab-download-manager-package-layout" { } ''
+          ab-download-manager-package-layout = pkgs.runCommand "ab-download-manager-package-layout" { } ''
             test -x ${package}/bin/ABDownloadManager
             test -x ${package}/bin/ABDownloadManagerCli
             test -x ${package}/bin/ABDownloadManagerNativeMessagingHost
@@ -97,12 +89,12 @@
         }
       );
 
-      formatter = forAllSystems (system: (mkPkgs system).nixfmt-tree);
+      formatter = forAllSystems (system: (pkgsFor system).nixfmt-tree);
 
       devShells = forAllSystems (
         system:
         let
-          pkgs = mkPkgs system;
+          pkgs = pkgsFor system;
         in
         {
           default = pkgs.mkShellNoCC {
@@ -115,10 +107,5 @@
           };
         }
       );
-
-      homeModules = {
-        default = import ./modules/home-manager.nix;
-        ab-download-manager = self.homeModules.default;
-      };
     };
 }

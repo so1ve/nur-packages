@@ -126,6 +126,7 @@ stdenv.mkDerivation (finalAttrs: {
   passthru = {
     inherit uiScale;
     upstreamSources = release.sources;
+    updateScript = ./update.sh;
   };
 
   meta = {

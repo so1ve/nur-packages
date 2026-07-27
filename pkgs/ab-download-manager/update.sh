@@ -2,12 +2,12 @@
 
 set -euo pipefail
 
-sources_file="$PWD/sources.json"
+sources_file="$PWD/pkgs/ab-download-manager/sources.json"
 repository="amir1376/ab-download-manager"
 requested_version="${1:-}"
 
 if [[ ! -f "$sources_file" ]]; then
-  echo "error: run this command from the flake repository root" >&2
+  echo "error: run this command from the NUR repository root" >&2
   exit 1
 fi
 

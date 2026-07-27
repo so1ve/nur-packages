@@ -21,8 +21,8 @@ in
 
     package = lib.mkOption {
       type = lib.types.package;
-      default = pkgs.callPackage ../package.nix { };
-      defaultText = lib.literalExpression "pkgs.callPackage ../package.nix { }";
+      default = pkgs.callPackage ../pkgs/ab-download-manager { };
+      defaultText = lib.literalExpression "pkgs.callPackage ../pkgs/ab-download-manager { }";
       description = "AB Download Manager package to install.";
     };
 
