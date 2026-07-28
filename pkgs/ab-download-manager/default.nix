@@ -87,7 +87,9 @@ stdenv.mkDerivation (finalAttrs: {
       makeWrapper \
         "$out/opt/ab-download-manager/bin/$program" \
         "$out/bin/$program" \
-        --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath [ fontconfig ]}"
+        --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath [ fontconfig ]}" \
+        --set-default FONTCONFIG_FILE "${fontconfig.out}/etc/fonts/fonts.conf" \
+        --run 'export _JAVA_OPTIONS="''${_JAVA_OPTIONS:+$_JAVA_OPTIONS }-Djpackage.app-path=$0"'
     done
 
     install -Dm444 \
@@ -100,11 +102,11 @@ stdenv.mkDerivation (finalAttrs: {
     Type=Application
     Name=AB Download Manager
     Comment=Manage and accelerate downloads
-    Exec=ABDownloadManager %U
+    Exec=ABDownloadManager
     Icon=com.abdownloadmanager
     Categories=Network;FileTransfer;
     Terminal=false
-    StartupNotify=true
+    StartupWMClass=com-abdownloadmanager-desktop-AppKt
     EOF
 
     install -Dm444 /dev/stdin \
