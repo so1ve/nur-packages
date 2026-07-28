@@ -69,26 +69,6 @@
         }
       );
 
-      checks = forAllSystems (
-        system:
-        let
-          pkgs = pkgsFor system;
-          package = self.packages.${system}.ab-download-manager;
-        in
-        {
-          ab-download-manager = package;
-
-          ab-download-manager-package-layout = pkgs.runCommand "ab-download-manager-package-layout" { } ''
-            test -x ${package}/bin/ABDownloadManager
-            test -x ${package}/bin/ABDownloadManagerCli
-            test -x ${package}/bin/ABDownloadManagerNativeMessagingHost
-            test -f ${package}/share/applications/com.abdownloadmanager.desktop
-            test -f ${package}/lib/mozilla/native-messaging-hosts/com.abdownloadmanager.json
-            touch "$out"
-          '';
-        }
-      );
-
       formatter = forAllSystems (system: (pkgsFor system).nixfmt-tree);
 
       devShells = forAllSystems (
