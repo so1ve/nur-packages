@@ -28,7 +28,12 @@ jobs:
       - name: Update packages
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: nix run .#update
+        run: |
+          key_file="$RUNNER_TEMP/nvfetcher.toml"
+          trap 'rm -f "$key_file"' EXIT
+          umask 077
+          printf '[keys]\ngithub = "%s"\n' "$GITHUB_TOKEN" >"$key_file"
+          nix run .#update -- -k "$key_file"
 
       - name: Detect updates
         id: changes

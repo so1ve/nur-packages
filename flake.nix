@@ -12,8 +12,8 @@
 
   outputs =
     {
-      self,
       nixpkgs,
+      ...
     }:
     let
       systems = [
@@ -41,7 +41,13 @@
         system:
         let
           pkgs = pkgsFor system;
-          updatePackages = pkgs.callPackage ./tools/update-packages { } self.packages.${system};
+          updatePackages = pkgs.writeShellApplication {
+            name = "update-packages";
+            runtimeInputs = [ pkgs.nvfetcher ];
+            text = ''
+              nvfetcher -c ${./nvfetcher.toml} -o _sources "$@"
+            '';
+          };
         in
         {
           update = {
@@ -63,8 +69,8 @@
           default = pkgs.mkShellNoCC {
             packages = with pkgs; [
               actionlint
-              deno
               nixfmt-tree
+              nvfetcher
             ];
           };
         }

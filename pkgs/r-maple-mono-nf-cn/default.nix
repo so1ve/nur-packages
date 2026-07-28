@@ -1,27 +1,13 @@
 {
-  callPackage,
-  fetchurl,
   lib,
+  source,
   stdenvNoCC,
   unzip,
 }:
 
-let
-  release = builtins.fromJSON (builtins.readFile ./sources.json);
-  source = release.sources.all;
-  updater = callPackage ../../tools/github-release-updater { } {
-    name = "r-maple-mono-nf-cn";
-    config = ./update.json;
-  };
-in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "r-maple-mono-nf-cn";
-  inherit (release) version;
-
-  src = fetchurl {
-    url = "https://github.com/so1ve/maple-font/releases/download/v${finalAttrs.version}/${source.asset}";
-    inherit (source) hash;
-  };
+  inherit (source) version src;
 
   nativeBuildInputs = [ unzip ];
   dontUnpack = true;
@@ -34,11 +20,6 @@ stdenvNoCC.mkDerivation (finalAttrs: {
 
     runHook postInstall
   '';
-
-  passthru = {
-    inherit updater;
-    updateScript = lib.getExe updater;
-  };
 
   meta = {
     description = "R Maple Mono with Nerd Font icons and CJK glyphs";

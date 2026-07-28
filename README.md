@@ -51,6 +51,12 @@ nix.settings = {
 };
 ```
 
+## Updating
+
+```bash
+nix run .#update
+```
+
 ## Packages
 
 | Attribute | Documentation |
