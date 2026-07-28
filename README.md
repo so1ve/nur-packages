@@ -37,6 +37,17 @@ Or add the repository as a flake input:
 
 Packages are exposed through `packages` and modules through `homeModules`.
 
+## Binary cache
+
+```nix
+nix.settings = {
+  extra-substituters = [ "https://so1ve.cachix.org" ];
+  extra-trusted-public-keys = [
+    "so1ve.cachix.org-1:51jcW4FkJhiLcqPsiUx3nglRP469les8F9zjFxio1nw="
+  ];
+};
+```
+
 ## Packages
 
 | Attribute | Documentation |

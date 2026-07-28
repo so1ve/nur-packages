@@ -77,6 +77,10 @@ jobs:
       - name: Apply package updates
         run: git apply "$RUNNER_TEMP/package-updates/package-updates.patch"
       - uses: cachix/install-nix-action@v31
+      - uses: cachix/cachix-action@v17
+        with:
+          name: so1ve
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - uses: ./.github/actions/build-packages
         with:
           system: ${{ matrix.system }}
