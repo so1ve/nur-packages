@@ -1,0 +1,11 @@
+{
+  "name": "R Maple Mono NF CN",
+  "repository": "so1ve/maple-font",
+  "tagPrefix": "v",
+  "output": "pkgs/r-maple-mono-nf-cn/sources.json",
+  "systems": {
+    "all": {
+      "asset": "RMapleMono-NF-CN.zip"
+    }
+  }
+}

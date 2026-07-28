@@ -43,3 +43,4 @@ overlays through `overlays`.
 | Attribute | Documentation |
 | --- | --- |
 | `ab-download-manager` | [Usage](pkgs/ab-download-manager/README.md) |
+| `r-maple-mono-nf-cn` | [Usage](pkgs/r-maple-mono-nf-cn/README.md) |
