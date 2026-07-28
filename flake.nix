@@ -25,18 +25,6 @@
         import ./default.nix {
           pkgs = pkgsFor system;
         };
-      mkUpdate =
-        pkgs:
-        pkgs.writeShellApplication {
-          name = "update-ab-download-manager";
-          runtimeInputs = with pkgs; [
-            coreutils
-            curl
-            jq
-            nix
-          ];
-          text = builtins.readFile ./pkgs/ab-download-manager/update.sh;
-        };
     in
     {
       overlays = import ./overlays;
@@ -52,19 +40,13 @@
         system:
         let
           pkgs = pkgsFor system;
-          package = self.packages.${system}.ab-download-manager;
-          update = mkUpdate pkgs;
+          updatePackages = pkgs.callPackage ./tools/update-packages { } self.packages.${system};
         in
         {
-          ab-download-manager-cli = {
+          update = {
             type = "app";
-            program = "${package}/bin/ABDownloadManagerCli";
-            meta.description = "Run the AB Download Manager command-line client";
-          };
-          update-ab-download-manager = {
-            type = "app";
-            program = "${update}/bin/update-ab-download-manager";
-            meta.description = "Update AB Download Manager source metadata";
+            program = "${updatePackages}/bin/update-packages";
+            meta.description = "Update every package with an update script";
           };
         }
       );
@@ -80,9 +62,8 @@
           default = pkgs.mkShellNoCC {
             packages = with pkgs; [
               actionlint
-              jq
+              deno
               nixfmt-tree
-              shellcheck
             ];
           };
         }

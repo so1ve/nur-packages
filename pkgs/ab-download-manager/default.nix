@@ -1,6 +1,7 @@
 {
   alsa-lib,
   autoPatchelfHook,
+  callPackage,
   fetchurl,
   fontconfig,
   freetype,
@@ -25,16 +26,21 @@ assert lib.assertMsg (
 
 let
   release = builtins.fromJSON (builtins.readFile ./sources.json);
+  mkGitHubReleaseUpdater = callPackage ../../tools/github-release-updater { };
   source =
     release.sources.${stdenv.hostPlatform.system}
       or (throw "ab-download-manager: unsupported system ${stdenv.hostPlatform.system}");
+  updater = mkGitHubReleaseUpdater {
+    name = "ab-download-manager";
+    config = ./update.json;
+  };
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "ab-download-manager";
   inherit (release) version;
 
   src = fetchurl {
-    url = "https://github.com/amir1376/ab-download-manager/releases/download/v${finalAttrs.version}/ABDownloadManager_${finalAttrs.version}_linux_${source.arch}.tar.gz";
+    url = "https://github.com/amir1376/ab-download-manager/releases/download/v${finalAttrs.version}/${source.asset}";
     inherit (source) hash;
   };
 
@@ -126,9 +132,9 @@ stdenv.mkDerivation (finalAttrs: {
   '';
 
   passthru = {
-    inherit uiScale;
+    inherit uiScale updater;
     upstreamSources = release.sources;
-    updateScript = ./update.sh;
+    updateScript = lib.getExe updater;
   };
 
   meta = {
