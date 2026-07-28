@@ -2,6 +2,9 @@
 
 Ray's personal [NUR](https://github.com/nix-community/NUR) repository
 
+[![CI](https://github.com/so1ve/nur-packages/actions/workflows/ci.yml/badge.svg)](https://github.com/so1ve/nur-packages/actions/workflows/ci.yml)
+[![Cachix Cache](https://img.shields.io/badge/cachix-so1ve-blue.svg)](https://so1ve.cachix.org)
+
 ## NUR
 
 After enabling NUR, install a package through its repository attribute:
