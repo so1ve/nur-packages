@@ -14,12 +14,7 @@
         "aarch64-linux"
       ];
       forAllSystems = nixpkgs.lib.genAttrs systems;
-      pkgsFor =
-        system:
-        import nixpkgs {
-          inherit system;
-          overlays = [ self.overlays.default ];
-        };
+      pkgsFor = system: import nixpkgs { inherit system; };
       repositoryFor =
         system:
         import ./default.nix {
@@ -27,7 +22,6 @@
         };
     in
     {
-      overlays = import ./overlays;
       homeModules = import ./home-modules;
 
       legacyPackages = forAllSystems repositoryFor;

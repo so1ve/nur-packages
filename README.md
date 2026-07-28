@@ -12,8 +12,8 @@ environment.systemPackages = [
 ];
 ```
 
-Published modules and overlays are available below
-`pkgs.nur.repos.so1ve.modules` and `pkgs.nur.repos.so1ve.overlays`.
+Published Home Manager modules are available through
+`inputs.nur.repos.so1ve.homeModules` when NUR is used as a flake input.
 
 ## Flake
 
@@ -35,8 +35,7 @@ Or add the repository as a flake input:
 }
 ```
 
-Packages are exposed through `packages`, modules through `homeModules`, and
-overlays through `overlays`.
+Packages are exposed through `packages` and modules through `homeModules`.
 
 ## Packages
 
