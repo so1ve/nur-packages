@@ -1,6 +1,8 @@
 # GitHub release updater
 
-This updater turns a GitHub release and a small package configuration into a Nix-friendly `sources.json`. It matches release assets exactly, uses GitHub's SHA-256 digest when available, and falls back to `nix store prefetch-file`.
+This updater turns a GitHub release and a small package configuration into a
+Nix-friendly `sources.json`. It matches release assets exactly, uses GitHub's
+SHA-256 digest when available, and falls back to `nix store prefetch-file`.
 
 ```json
 {
@@ -16,7 +18,8 @@ This updater turns a GitHub release and a small package configuration into a Nix
 }
 ```
 
-Asset templates can use `version`, `tag`, and `system`. The resolved asset name and its hash are written to the corresponding source entry.
+Asset templates can use `version`, `tag`, and `system`. The resolved asset name
+and its hash are written to the corresponding source entry.
 
 Create a runnable updater in Nix:
 
@@ -28,4 +31,5 @@ updater = mkUpdater {
 };
 ```
 
-Run the generated command from the repository root. It supports `GITHUB_TOKEN` or `GH_TOKEN`.
+Run the generated command from the repository root. It supports `GITHUB_TOKEN`
+or `GH_TOKEN`.
