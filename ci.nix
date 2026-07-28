@@ -10,7 +10,6 @@ let
     filter
     isAttrs
     listToAttrs
-    map
     ;
 
   reservedNames = [
