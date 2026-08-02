@@ -32,8 +32,6 @@ stdenv.mkDerivation (finalAttrs: {
 
   strictDeps = true;
 
-  patches = [ ./prefer-wayland-freerdp.patch ];
-
   node_modules = stdenvNoCC.mkDerivation {
     pname = "${finalAttrs.pname}-node_modules";
     inherit (finalAttrs) version src;
