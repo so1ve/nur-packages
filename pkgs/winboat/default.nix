@@ -32,6 +32,8 @@ stdenv.mkDerivation (finalAttrs: {
 
   strictDeps = true;
 
+  patches = [ ./prefer-wayland-freerdp.patch ];
+
   node_modules = stdenvNoCC.mkDerivation {
     pname = "${finalAttrs.pname}-node_modules";
     inherit (finalAttrs) version src;
@@ -135,7 +137,7 @@ stdenv.mkDerivation (finalAttrs: {
   installPhase = ''
     runHook preInstall
 
-    mkdir -p "$out/bin" "$out/share/winboat"
+    mkdir -p "$out/bin" "$out/libexec/winboat" "$out/share/winboat"
     cp -r dist/linux-unpacked/resources "$out/share/winboat/resources"
 
     install -Dm444 \
@@ -145,9 +147,13 @@ stdenv.mkDerivation (finalAttrs: {
     ln -s "$out/share/winboat/resources/data" "$out/share/winboat/data"
     ln -s "$out/share/winboat/resources/guest_server" "$out/share/winboat/guest_server"
 
+    makeWrapper ${freerdp}/bin/sdl-freerdp "$out/libexec/winboat/sdl-freerdp" \
+      --set SDL_VIDEODRIVER wayland
+
     makeWrapper ${electron}/bin/electron "$out/bin/winboat" \
       --add-flag "$out/share/winboat/resources/app.asar" \
       --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime=true}}" \
+      --prefix PATH : "$out/libexec/winboat" \
       --suffix PATH : ${
         lib.makeBinPath [
           docker-compose
