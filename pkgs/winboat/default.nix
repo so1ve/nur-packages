@@ -145,8 +145,8 @@ stdenv.mkDerivation (finalAttrs: {
     ln -s "$out/share/winboat/resources/data" "$out/share/winboat/data"
     ln -s ../resources/guest_server "$out/share/winboat/guest_server/dist"
 
-    makeWrapper ${freerdp}/bin/sdl-freerdp "$out/libexec/winboat/sdl-freerdp" \
-      --set SDL_VIDEODRIVER wayland
+    makeWrapper ${freerdp}/bin/xfreerdp "$out/libexec/winboat/xfreerdp" \
+      --add-flags "-grab-keyboard"
 
     makeWrapper ${electron}/bin/electron "$out/bin/winboat" \
       --add-flag "$out/share/winboat/resources/app.asar" \
