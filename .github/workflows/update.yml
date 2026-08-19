@@ -32,8 +32,23 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          nix run .#update
+          failed=()
+          for source in pkgs/*/source.ts; do
+            package="$(basename "$(dirname "$source")")"
+            echo "::group::Update $package"
+            if nix run .#update -- "$package"; then
+              echo "Updated $package"
+            else
+              echo "::warning::Failed to update $package, continuing with other packages"
+              failed+=("$package")
+            fi
+            echo "::endgroup::"
+          done
           git add --all -- pkgs
+
+          if ((${#failed[@]} > 0)); then
+            echo "Failed to update: ${failed[*]}" >>"$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Detect updates
         id: changes
