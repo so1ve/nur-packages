@@ -11,6 +11,7 @@ Ray's personal [NUR](https://github.com/nix-community/NUR) repository
 | --- | --- |
 | `ab-download-manager` | [Usage](pkgs/ab-download-manager/README.md) |
 | `baidunetdisk` | [Upstream](https://pan.baidu.com/) |
+| `baidupcs-go` | [Upstream](https://github.com/qjfoidnh/BaiduPCS-Go) |
 | `deepseek-harness` | [Usage](pkgs/deepseek-harness/README.md) |
 | `firefoxpwa-xwayland` | [Usage](pkgs/firefoxpwa-xwayland/README.md) |
 | `flutter-rust-bridge-codegen` | [Upstream](https://github.com/fzyzcjy/flutter_rust_bridge) |
