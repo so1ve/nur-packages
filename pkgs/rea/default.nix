@@ -47,8 +47,6 @@ buildNpmPackage {
   installCheckPhase = ''
     runHook preInstallCheck
 
-    export HOME="$TMPDIR/rea-check"
-    mkdir -p "$HOME"
     "$out/bin/rea" --version
 
     node --input-type=module <<'JS'
@@ -67,6 +65,10 @@ buildNpmPackage {
     description = "Reverse engineering CLI and MCP server for AI agents";
     homepage = "https://github.com/morluto/rea";
     license = lib.licenses.mit;
+    sourceProvenance = with lib.sourceTypes; [
+      fromSource
+      binaryNativeCode
+    ];
     mainProgram = "rea";
     platforms = [
       "x86_64-linux"
