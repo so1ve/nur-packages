@@ -3,7 +3,7 @@
 Ray's personal [NUR](https://github.com/nix-community/NUR) repository
 
 [![CI](https://github.com/so1ve/nur-packages/actions/workflows/ci.yml/badge.svg)](https://github.com/so1ve/nur-packages/actions/workflows/ci.yml)
-[![Cachix Cache](https://img.shields.io/badge/cachix-so1ve-blue.svg)](https://so1ve.cachix.org)
+[![Binary cache](https://img.shields.io/badge/cache-cache.so1ve.dev-blue.svg)](https://cache.so1ve.dev/nix-cache-info)
 
 ## Packages
 
@@ -74,13 +74,16 @@ nix profile install github:so1ve/nur-packages#ab-download-manager
 }
 ```
 
-## Cachix
+## Binary cache
+
+Packages are stored in `ghcr.io/so1ve/nur-cache` and served through
+[oranc](https://github.com/linyinfeng/oranc) at `https://cache.so1ve.dev`.
 
 ```nix
 nix.settings = {
-  extra-substituters = [ "https://so1ve.cachix.org" ];
+  extra-substituters = [ "https://cache.so1ve.dev" ];
   extra-trusted-public-keys = [
-    "so1ve.cachix.org-1:51jcW4FkJhiLcqPsiUx3nglRP469les8F9zjFxio1nw="
+    "cache.so1ve.dev-1:SijyzF9iE/VZwMXgMpd/HrNX9iItDZ1tdiNdeGakQGY="
   ];
 };
 ```
