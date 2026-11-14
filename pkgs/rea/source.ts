@@ -1,8 +1,8 @@
-import { defineSource, fetchurl, npm, provider } from "nix-repin";
+import { defineSource, fetchurl, npm } from "nix-repin";
 
 export default defineSource(
   npm.pkg({ name: "rea-agents" }),
-  provider(async (source) => {
+  async (source) => {
     const lock = JSON.parse(source.files()["package-lock.json"] as string);
 
     const fridaVersion =
@@ -20,5 +20,5 @@ export default defineSource(
     });
 
     return { "frida.nix": frida["source.nix"] };
-  }),
+  },
 );
