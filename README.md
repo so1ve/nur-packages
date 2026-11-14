@@ -27,6 +27,7 @@ Ray's personal [NUR](https://github.com/nix-community/NUR) repository
 | `kotlin-lsp` | [Usage](pkgs/kotlin-lsp/README.md) |
 | `magpie` | [Upstream](https://github.com/yetone/magpie) |
 | `peazip-rar` | [Usage](pkgs/peazip-rar/README.md) |
+| `pocket-id` | [Upstream](https://github.com/pocket-id/pocket-id) |
 | `r-maple-mono-nf-cn` | [Usage](pkgs/r-maple-mono-nf-cn/README.md) |
 | `rea` | [Usage](pkgs/rea/README.md) |
 | `rime-frost` | [Upstream](https://github.com/gaboolic/rime-frost) |
